@@ -165,7 +165,7 @@ class Sf2File(RiffParser):
 
         if len(self._raw) == 0:
             raise ValueError("Empty soundfont file")
-        if len(self.raw) > 1:
+        if len(self._raw) > 1:
             logging.warning("Multiple soundfont roots, using first one")
         self._raw = self._raw[0]
 
