@@ -47,6 +47,8 @@ class MyController():
         self.model.loadSoundfont()
         self.view.setInstrumentList(list(map(lambda x: x.i_name, self.model.getInstrumentList())))
         self.view.setSampleList([])
+        self.model.setOutDir(os.path.dirname(temp))
+        self.view.setOutDirectory(self.model.out_dir)
     def outBrowseSelected(self):
         self.model.setOutDir(filedialog.askdirectory())
         self.view.setOutDirectory(self.model.out_dir)

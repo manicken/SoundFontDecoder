@@ -125,17 +125,21 @@ class MyView(Frame):
         self.box_3 = pjrc.JJLabelFrame(self.upper_frame, 2, 1, 1, 1, text='Output Settings')
         self.box_3.grid(column=2, row=0, padx=self.box_pad, pady=self.box_pad, sticky=N + S + E + W)
         self.dir_line = Frame(self.box_3)
-        self.dir_line.grid(row=0, column=0)
-        self.folder_label = Label(self.dir_line, text='Folder')
+        self.dir_line.grid(row=0, column=0, sticky=N + S + E + W)
+
+        
+
+        self.folder_label = Label(self.dir_line, text='Folder', justify=LEFT)
         self.folder_label.grid(row=1, column=0)
         self.folder_entry = Entry(self.dir_line, textvariable=self.out_dir)
-        self.folder_entry.grid(row=1, column=1)
+        self.folder_entry.grid(row=1, column=1, sticky=E + W)
         self.folder_button = Button(self.dir_line, text='Browse', command=self.controller.outBrowseSelected)
-        self.folder_button.grid(row=1, column=2)
+        self.folder_button.grid(row=2, column=1)
+        
         self.name_label = Label(self.dir_line, text = 'Name')
         self.name_label.grid(row=0, column=0)
         self.name_entry = Entry(self.dir_line, textvariable=self.out_name)
-        self.name_entry.grid(row=0, column=1, columnspan=2, sticky=E + W)
+        self.name_entry.grid(row=0, column=1, sticky=E + W)
 
         self.lower_frame = pjrc.JJFrame(self, 1, 2, 1, 1)
         self.lower_frame.configurerows([(0,1), (1,0)])

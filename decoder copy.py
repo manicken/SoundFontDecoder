@@ -305,15 +305,13 @@ def export_samples(bags, global_bag, num_samples, file_dir, file_title="samples"
         # For each sample print out sample array to .cpp file and init to .h file
         for i in range(len(bags)):
             raw_wav_data = bags[i].sample.raw_sample_data
-            #length_16 = bags[i].sample.end
-            length_16 = bags[i].sample.duration
-            
-            if bags[i].sample_loop == 1 and bags[i].cooked_loop_end < length_16: #bags[i].sample.end:
+            length_16 = bags[i].sample.end
+            if bags[i].sample_loop == 1 and bags[i].cooked_loop_end < bags[i].sample.end:
                 length_16 = bags[i].cooked_loop_end + 1
             length_8 = length_16 * 2
             length_32 = math.ceil(length_16 / 2)
             pad_length = 0 if length_32 % 128 == 0 else 128 - length_32 % 128
-            print('name={}, length_16_orginal={}, length_16_cook={}, pad_length={}'.format(bags[i].sample.name, bags[i].sample.duration, length_16, pad_length));
+
             ary_length = int(length_32 + pad_length)
 
             smpl_identifier = "sample_{0}_{1}_{2}[{3}]" \
@@ -363,47 +361,19 @@ def export_samples(bags, global_bag, num_samples, file_dir, file_title="samples"
 # @param instrument_name name of the instrument
 # @param keyRange the key range value pair for this sample. Always between 0-127.
 def gen_sample_meta_data_string(bag, global_bag, sample_num, instrument_name, keyRange):
-    out_fmt_str = \
-        "\t{{\n" \
-        "\t\t(int16_t*){SAMPLE_ARRAY_NAME}, // sample\n" \
-        "\t\t{LOOP}, // LOOP\n" \
-        "\t\t{LENGTH_BITS}, // LENGTH_BITS\n" \
-        "\t\t(1 << (32 - {LENGTH_BITS})) * WAVETABLE_CENTS_SHIFT({CENTS_OFFSET}) * {SAMPLE_RATE:.1f} / WAVETABLE_NOTE_TO_FREQUENCY({SAMPLE_NOTE}) / AUDIO_SAMPLE_RATE_EXACT + 0.5, // PER_HERTZ_PHASE_INCREMENT\n" \
-        "\t\t((uint32_t){LENGTH} - 1) << (32 - {LENGTH_BITS}), // MAX_PHASE\n" \
-        "\t\t((uint32_t){LOOP_END} - 1) << (32 - {LENGTH_BITS}), // LOOP_PHASE_END\n" \
-        "\t\t(((uint32_t){LOOP_END} - 1) << (32 - {LENGTH_BITS})) - (((uint32_t){LOOP_START} - 1) << (32 - {LENGTH_BITS})), // LOOP_PHASE_LENGTH\n" \
-        "\t\tuint16_t(UINT16_MAX * WAVETABLE_DECIBEL_SHIFT({INIT_ATTENUATION})), // INITIAL_ATTENUATION_SCALAR\n" \
-        "\t\tuint32_t({DELAY_ENV:.2f} * AudioSynthWavetable::SAMPLES_PER_MSEC / AudioSynthWavetable::ENVELOPE_PERIOD + 0.5), // DELAY_COUNT\n" \
-        "\t\tuint32_t({ATTACK_ENV:.2f} * AudioSynthWavetable::SAMPLES_PER_MSEC / AudioSynthWavetable::ENVELOPE_PERIOD + 0.5), // ATTACK_COUNT\n" \
-        "\t\tuint32_t({HOLD_ENV:.2f} * AudioSynthWavetable::SAMPLES_PER_MSEC / AudioSynthWavetable::ENVELOPE_PERIOD + 0.5), // HOLD_COUNT\n" \
-        "\t\tuint32_t({DECAY_ENV:.2f} * AudioSynthWavetable::SAMPLES_PER_MSEC / AudioSynthWavetable::ENVELOPE_PERIOD + 0.5), // DECAY_COUNT\n" \
-        "\t\tuint32_t({RELEASE_ENV:.2f} * AudioSynthWavetable::SAMPLES_PER_MSEC / AudioSynthWavetable::ENVELOPE_PERIOD + 0.5), // RELEASE_COUNT\n" \
-        "\t\tint32_t((1.0 - WAVETABLE_DECIBEL_SHIFT({SUSTAIN_FRAC:.1f})) * AudioSynthWavetable::UNITY_GAIN), // SUSTAIN_MULT\n" \
-        "\t\tuint32_t({VIB_DELAY_ENV:.2f} * AudioSynthWavetable::SAMPLES_PER_MSEC / (2 * AudioSynthWavetable::LFO_PERIOD)), // VIBRATO_DELAY\n" \
-        "\t\tuint32_t({VIB_INC_ENV:.1f} * AudioSynthWavetable::LFO_PERIOD * (UINT32_MAX / AUDIO_SAMPLE_RATE_EXACT)), // VIBRATO_INCREMENT\n" \
-        "\t\t(WAVETABLE_CENTS_SHIFT({VIB_PITCH_INIT}) - 1.0) * 4, // VIBRATO_PITCH_COEFFICIENT_INITIAL\n" \
-        "\t\t(1.0 - WAVETABLE_CENTS_SHIFT({VIB_PITCH_SCND})) * 4, // VIBRATO_COEFFICIENT_SECONDARY\n" \
-        "\t\tuint32_t({MOD_DELAY_ENV:.2f} * AudioSynthWavetable::SAMPLES_PER_MSEC / (2 * AudioSynthWavetable::LFO_PERIOD)), // MODULATION_DELAY\n" \
-        "\t\tuint32_t({MOD_INC_ENV:.1f} * AudioSynthWavetable::LFO_PERIOD * (UINT32_MAX / AUDIO_SAMPLE_RATE_EXACT)), // MODULATION_INCREMENT\n" \
-        "\t\t(WAVETABLE_CENTS_SHIFT({MOD_PITCH_INIT}) - 1.0) * 4, // MODULATION_PITCH_COEFFICIENT_INITIAL\n" \
-        "\t\t(1.0 - WAVETABLE_CENTS_SHIFT({MOD_PITCH_SCND})) * 4, // MODULATION_PITCH_COEFFICIENT_SECOND\n" \
-        "\t\tint32_t(UINT16_MAX * (WAVETABLE_DECIBEL_SHIFT({MOD_AMP_INIT_GAIN}) - 1.0)) * 4, // MODULATION_AMPLITUDE_INITIAL_GAIN\n" \
-        "\t\tint32_t(UINT16_MAX * (1.0 - WAVETABLE_DECIBEL_SHIFT({MOD_AMP_SCND_GAIN}))) * 4, // MODULATION_AMPLITUDE_FINAL_GAIN\n" \
-        "\t}},\n"
+    
 
     length_bits = 0
-    length = bag.sample.end - bag.sample.start
-    print("bag.sample_loop or global_bag.sample_loop={}, bag.cooked_loop_end={}, length={}".format(bag.sample_loop or global_bag.sample_loop, bag.cooked_loop_end, length))
-    if (bag.sample_loop == 1 or global_bag.sample_loop == 1) and bag.cooked_loop_end < length:
+    length = bag.sample.end
+    if bag.sample_loop == 1 and bag.cooked_loop_end < length:
         length = bag.cooked_loop_end + 1
-
     len = length
     shift_res = 1
     while len != 0:
         length_bits += 1
         len = len >> 1
     phase_mult = (0x80000000 >> (length_bits - 1))
-    
+
     out_vals = {
         "LOOP": "true" if bag.sample_loop == 1 or global_bag.sample_loop == 1 else "false",
         "SAMPLE_NOTE": bag.base_note if bag.base_note else bag.sample.original_pitch,
@@ -467,6 +437,34 @@ def gen_sample_meta_data_string(bag, global_bag, sample_num, instrument_name, ke
         "MOD_AMP_SCND_GAIN": -get_decibel_value(13, 0, -96, 96)
     }
 
+    out_fmt_str = \
+        "\t{{\n" \
+        "\t\t(int16_t*){SAMPLE_ARRAY_NAME}, // sample\n" \
+        "\t\t{LOOP}, // LOOP\n" \
+        "\t\t{LENGTH_BITS}, // LENGTH_BITS\n" \
+        "\t\t(1 << (32 - {LENGTH_BITS})) * WAVETABLE_CENTS_SHIFT({CENTS_OFFSET}) * {SAMPLE_RATE:.1f} / WAVETABLE_NOTE_TO_FREQUENCY({SAMPLE_NOTE}) / AUDIO_SAMPLE_RATE_EXACT + 0.5, // PER_HERTZ_PHASE_INCREMENT\n" \
+        "\t\t((uint32_t){LENGTH} - 1) << (32 - {LENGTH_BITS}), // MAX_PHASE\n" \
+        "\t\t((uint32_t){LOOP_END} - 1) << (32 - {LENGTH_BITS}), // LOOP_PHASE_END\n" \
+        "\t\t(((uint32_t){LOOP_END} - 1) << (32 - {LENGTH_BITS})) - (((uint32_t){LOOP_START} - 1) << (32 - {LENGTH_BITS})), // LOOP_PHASE_LENGTH\n" \
+        "\t\tuint16_t(UINT16_MAX * WAVETABLE_DECIBEL_SHIFT({INIT_ATTENUATION})), // INITIAL_ATTENUATION_SCALAR\n" \
+        "\t\tuint32_t({DELAY_ENV:.2f} * AudioSynthWavetable::SAMPLES_PER_MSEC / AudioSynthWavetable::ENVELOPE_PERIOD + 0.5), // DELAY_COUNT\n" \
+        "\t\tuint32_t({ATTACK_ENV:.2f} * AudioSynthWavetable::SAMPLES_PER_MSEC / AudioSynthWavetable::ENVELOPE_PERIOD + 0.5), // ATTACK_COUNT\n" \
+        "\t\tuint32_t({HOLD_ENV:.2f} * AudioSynthWavetable::SAMPLES_PER_MSEC / AudioSynthWavetable::ENVELOPE_PERIOD + 0.5), // HOLD_COUNT\n" \
+        "\t\tuint32_t({DECAY_ENV:.2f} * AudioSynthWavetable::SAMPLES_PER_MSEC / AudioSynthWavetable::ENVELOPE_PERIOD + 0.5), // DECAY_COUNT\n" \
+        "\t\tuint32_t({RELEASE_ENV:.2f} * AudioSynthWavetable::SAMPLES_PER_MSEC / AudioSynthWavetable::ENVELOPE_PERIOD + 0.5), // RELEASE_COUNT\n" \
+        "\t\tint32_t((1.0 - WAVETABLE_DECIBEL_SHIFT({SUSTAIN_FRAC:.1f})) * AudioSynthWavetable::UNITY_GAIN), // SUSTAIN_MULT\n" \
+        "\t\tuint32_t({VIB_DELAY_ENV:.2f} * AudioSynthWavetable::SAMPLES_PER_MSEC / (2 * AudioSynthWavetable::LFO_PERIOD)), // VIBRATO_DELAY\n" \
+        "\t\tuint32_t({VIB_INC_ENV:.1f} * AudioSynthWavetable::LFO_PERIOD * (UINT32_MAX / AUDIO_SAMPLE_RATE_EXACT)), // VIBRATO_INCREMENT\n" \
+        "\t\t(WAVETABLE_CENTS_SHIFT({VIB_PITCH_INIT}) - 1.0) * 4, // VIBRATO_PITCH_COEFFICIENT_INITIAL\n" \
+        "\t\t(1.0 - WAVETABLE_CENTS_SHIFT({VIB_PITCH_SCND})) * 4, // VIBRATO_COEFFICIENT_SECONDARY\n" \
+        "\t\tuint32_t({MOD_DELAY_ENV:.2f} * AudioSynthWavetable::SAMPLES_PER_MSEC / (2 * AudioSynthWavetable::LFO_PERIOD)), // MODULATION_DELAY\n" \
+        "\t\tuint32_t({MOD_INC_ENV:.1f} * AudioSynthWavetable::LFO_PERIOD * (UINT32_MAX / AUDIO_SAMPLE_RATE_EXACT)), // MODULATION_INCREMENT\n" \
+        "\t\t(WAVETABLE_CENTS_SHIFT({MOD_PITCH_INIT}) - 1.0) * 4, // MODULATION_PITCH_COEFFICIENT_INITIAL\n" \
+        "\t\t(1.0 - WAVETABLE_CENTS_SHIFT({MOD_PITCH_SCND})) * 4, // MODULATION_PITCH_COEFFICIENT_SECOND\n" \
+        "\t\tint32_t(UINT16_MAX * (WAVETABLE_DECIBEL_SHIFT({MOD_AMP_INIT_GAIN}) - 1.0)) * 4, // MODULATION_AMPLITUDE_INITIAL_GAIN\n" \
+        "\t\tint32_t(UINT16_MAX * (1.0 - WAVETABLE_DECIBEL_SHIFT({MOD_AMP_SCND_GAIN}))) * 4, // MODULATION_AMPLITUDE_FINAL_GAIN\n" \
+        "\t}},\n"
+
     # dictionary comprehesion to merge out_vals and env_vals
     fmt_vals = {k: v for d in [out_vals, env_vals] for k, v in d.items()}
 
@@ -495,7 +493,6 @@ def getKeyRanges(bags, keyRanges):
     tempList = [bag for bag in bags if bag.key_range == None]
     bags = [bag for bag in bags if bag not in tempList]
 
-    
     # sort bags with key ranges and fill any gaps in range
     if(len(bags) != 0):
         bags.sort(key=lambda x:x.key_range[0])

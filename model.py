@@ -116,6 +116,7 @@ class MyModel():
         for inst in sf2.instruments:
             if inst.name == 'EOI':
                 break
+            print('\n         [{:20}]'.format(inst.name))
             sf2Instruments.append(sf2elements.Instrument(inst.name.replace(" ", "_"), inst_index))
             inst_index += 1
             bag_index = 0
@@ -124,11 +125,10 @@ class MyModel():
                     sf2Instruments[-1].setGlobalBag(bag_index)
                 elif bag.sample is not None and bag.sample not in sf2Instruments[-1].Samples:
                     end = bag.sample.end;
-                    print("end=", end);
-                    print("cooked_loop_end=", bag.cooked_loop_end);
+                    print('name={:20}, start={}, end={}, length={}, cook_loop=[ start={}, end={}, length={} ]'.format(bag.sample.name, bag.sample.start, bag.sample.end, bag.sample.duration, bag.cooked_loop_start, bag.cooked_loop_end, (bag.cooked_loop_end-bag.cooked_loop_start)))
                     if bag.sample_loop == 1 and bag.cooked_loop_end < bag.sample.end:
                         end = bag.cooked_loop_end;
-                    sf2Instruments[-1].Samples.append(sf2elements.Sample(bag.sample.name, bag_index, bag.key_range, end))
+                    sf2Instruments[-1].Samples.append(sf2elements.Sample(bag.sample.name, bag_index, bag.key_range, end-bag.sample.start))
                 bag_index += 1
         # sorted ascending by ascii value of instrument names
         # preserves case but sorts indifferent to it
