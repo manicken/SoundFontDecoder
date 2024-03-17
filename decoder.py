@@ -313,8 +313,9 @@ def export_samples(bags, global_bag, num_samples, file_dir, file_title="samples"
             length_8 = length_16 * 2
             length_32 = math.ceil(length_16 / 2)
             pad_length = 0 if length_32 % 128 == 0 else 128 - length_32 % 128
-            print('name={}, length_16_orginal={}, length_16_cook={}, pad_length={}'.format(bags[i].sample.name, bags[i].sample.duration, length_16, pad_length));
             ary_length = int(length_32 + pad_length)
+            print('name={}, length_16_orginal={}, length_16_cook={}, length_32={}, pad_length={}, ary_length={}'.format(bags[i].sample.name, bags[i].sample.duration, length_16, length_32, pad_length, ary_length));
+            
 
             smpl_identifier = "sample_{0}_{1}_{2}[{3}]" \
                 .format(i, instrument_name, re.sub(r'[\W]+', '', bags[i].sample.name), ary_length)
