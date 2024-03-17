@@ -308,7 +308,7 @@ def export_samples(bags, global_bag, num_samples, file_dir, file_title="samples"
             #length_16 = bags[i].sample.end
             length_16 = bags[i].sample.duration
             
-            if bags[i].sample_loop == 1 and bags[i].cooked_loop_end < length_16: #bags[i].sample.end:
+            if (bags[i].sample_loop == 1 or global_bag.sample_loop == 1) and bags[i].cooked_loop_end < length_16: #bags[i].sample.end:
                 length_16 = bags[i].cooked_loop_end + 1
             length_8 = length_16 * 2
             length_32 = math.ceil(length_16 / 2)
@@ -327,7 +327,7 @@ def export_samples(bags, global_bag, num_samples, file_dir, file_title="samples"
 
             # Output 32-bit hex literals
             line_width = 0
-            for j in range(0, length_8, 4):
+            """for j in range(0, length_8, 4):
                 out_bytes = raw_wav_data[j:j+4]
                 if len(out_bytes) != 4:
                     out_bytes += bytes(4 - len(out_bytes))
@@ -344,6 +344,7 @@ def export_samples(bags, global_bag, num_samples, file_dir, file_title="samples"
                     line_width = 0
                     cpp_file.write('\n')
                 pad_length -= 4
+                """
             cpp_file.write("};\n" if line_width == 8 else "\n};\n")
         cpp_file.write("\nstatic const AudioSynthWavetable::sample_data {0}_samples[{1}] = {{\n".format(instrument_name, num_samples))
         for i in range(len(bags)):
